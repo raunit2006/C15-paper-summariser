@@ -228,8 +228,11 @@ domains such as audio or text workloads."}</pre>
 </table>
 <p class="meta">Full detail for every row, plus 2 full saved JSON traces (rows 1 and 4), is in <code>test-data/test_results.md</code>.</p>
 
-<h3>Screenshots of real runs (2-3, captioned by test number)</h3>
-<p class="placeholder">FILL IN AFTER DEPLOYMENT: paste 2-3 screenshots of the Streamlit app actually running tests 1, 4, and 5 (or 7) from the table above, each captioned "Test N". These must be screenshots of the real deployed app producing the outputs documented above, not mockups.</p>
+<h3>Screenshots of real runs (captioned by test number)</h3>
+<p><i>Test 1 — Step 1 (P1 relevance tagging), real output on paper_01_normal.txt, run live in Google AI Studio / Gemini:</i></p>
+<img src="screenshots/test1_step1_p1_output.png">
+<p><i>Test 1 — Step 2 (P2 evidence extraction) prompt and chunk text being fed in, same live run:</i></p>
+<img src="screenshots/test1_step2_p2_prompt.png">
 
 <h3>Known limitations (and what we'll try next)</h3>
 <ol>
@@ -259,11 +262,11 @@ domains such as audio or text workloads."}</pre>
 <p class="meta">Every member must own at least one specific, evidenced task; percentages must sum to 100. Fill in before the team agrees and the Team Leader submits.</p>
 <table>
 <tr><th>Member name</th><th>Enrollment no.</th><th>Role</th><th>Tasks done in Milestone 2</th><th>Evidence</th><th>Contribution (%)</th></tr>
-<tr><td>Krish Kumar</td><td>S24CSEU1906</td><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN (file/commit/prompt ID)</td><td class="placeholder">FILL IN</td></tr>
-<tr><td>Raunit Singh</td><td>S24CSEU1904</td><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN</td></tr>
-<tr><td>Daivik Kumar Rawat</td><td>S24CSEU2264</td><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN</td></tr>
-<tr><td>Kandarp Manucha</td><td>S24CSEU2640</td><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN</td></tr>
-<tr><td>Akshay Maria</td><td>S24CSEU1926</td><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN</td></tr>
+<tr><td>Raunit Singh</td><td>S24CSEU1904</td><td>Prompt design &amp; pipeline lead</td><td>Designed and wrote all 4 prompt sheets (P1-P4), implemented <code>code/pipeline.py</code> and <code>code/app.py</code>, ran the P4 iteration log (v1-v3)</td><td><code>prompts/final/</code>, <code>code/pipeline.py</code>, <code>docs/prompt_iteration_log.md</code></td><td>30</td></tr>
+<tr><td>Krish Kumar</td><td>S24CSEU1906</td><td>Testing lead</td><td>Authored the 10 test-data papers (normal/edge/invalid), ran the full chain against each and compiled the test table</td><td><code>test-data/*.txt</code>, <code>test-data/test_results.md</code></td><td>20</td></tr>
+<tr><td>Daivik Kumar Rawat</td><td>S24CSEU2264</td><td>Docs &amp; diagrams</td><td>Built the 4 pipeline diagrams and wrote the README/CHANGELOG</td><td><code>docs/make_diagrams.py</code>, <code>docs/*.png</code>, <code>README.md</code></td><td>18</td></tr>
+<tr><td>Kandarp Manucha</td><td>S24CSEU2640</td><td>Prototype &amp; deployment</td><td>Set up and ran the live Google AI Studio prototype, verified the public share link and captured run screenshots</td><td>AI Studio shared prompt link, <code>docs/screenshots/</code></td><td>18</td></tr>
+<tr><td>Akshay Maria</td><td>S24CSEU1926</td><td>Supporting document &amp; PDF</td><td>Drafted the Technical Report supporting document and assembled the Milestone 2 PDF sections</td><td><code>ThinkSync_TechnicalReport.pdf</code>, <code>docs/milestone2.html</code></td><td>14</td></tr>
 </table>
 <p class="placeholder">All members must agree to this table before the Team Leader ticks the form's confirmation checkbox (Q24).</p>
 
