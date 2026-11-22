@@ -1,0 +1,9 @@
+Title: Noise-Robust Keyword Spotting for Low-Power Wearables
+
+Abstract
+Keyword spotting models deployed on wearable devices must run on
+microcontrollers with under 256KB of RAM while staying robust to wind noise,
+fabric rubbing, and motion artifacts absent from typical training data. We
+train a 40KB quantized CNN on a mixture of clean speech and device-collected
+noise recordings and show it keeps false-reject rate under 5% in windy
+outdoor conditions where an unmodified baseline model exceeds 30%.

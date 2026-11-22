@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Technical Report</title>
+<style>
+  body { font-family: Georgia, 'Times New Roman', serif; color: #1a1a1a; line-height: 1.5; max-width: 880px; margin: 0 auto; padding: 20px; font-size: 13.5px; }
+  h1 { font-size: 20px; border-bottom: 3px solid #2b4c7e; padding-bottom: 8px; }
+  h2 { font-size: 15px; color: #2b4c7e; margin-top: 18px; }
+  table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 12px; }
+  th, td { border: 1px solid #999; padding: 5px 7px; text-align: left; }
+  th { background: #eef3fb; }
+  .placeholder { background: #fff3cd; border: 1px dashed #d4a017; padding: 1px 5px; font-weight: bold; }
+  code { font-family: 'Courier New', monospace; background:#f0f0f0; padding:1px 4px; }
+</style>
+</head>
+<body>
+
+<h1>Technical Report — Research Paper Summariser for Students (C15)</h1>
+<p class="placeholder">Team: FILL IN &nbsp;|&nbsp; Team ID: FILL IN</p>
+
+<h2>Architecture</h2>
+<p>A four-stage, deterministic prompt chain (no agent loop, no retrieval) wraps a single-paper input: (1) paragraph-respecting chunking (~700 words/chunk), (2) per-chunk relevance tagging, (3) per-chunk quoted-evidence extraction, (4) whole-paper synthesis into Problem/Method/Results/Limitations, and (5) a hallucination-check pass that re-verifies every synthesized sentence against the numbered source chunks before the user sees it. The chain is exposed through a Streamlit UI that accepts pasted text or an uploaded PDF.</p>
+
+<h2>Tools and models used</h2>
+<p>Anthropic Claude Sonnet 5, called via the Anthropic Python SDK. Streamlit for the UI. <code>pypdf</code> for PDF text extraction. All four prompts run at temperature 0 except synthesis (0.2), chosen to keep tagging/extraction/verification deterministic while allowing slightly more natural phrasing in the final synthesized summary.</p>
+
+<h2>Prompt design</h2>
+<p>Evidence is extracted (quote + paraphrase) before synthesis, not after, so every claim in the final summary is traceable to source text by construction rather than by a single end-of-pipeline check. The hallucination-check prompt (P4) went through 3 iterations: v1 (free text, unparseable in 10/10 runs) &rarr; v2 (JSON schema, but unverifiable "supported" claims, missed 2/5 injected hallucinations) &rarr; v3 (numbered source chunks + required <code>supporting_chunk_ids</code>, caught 5/5 injected hallucinations). Full prompt text and iteration log are in the project repository (<code>prompts/</code>, <code>docs/prompt_iteration_log.md</code>).</p>
+
+<h2>Test results</h2>
+<table>
+<tr><th>Metric</th><th>Value</th></tr>
+<tr><td>Test inputs run</td><td>10 (3 normal, 5 edge, 2 invalid)</td></tr>
+<tr><td>Pass rate</td><td>7 / 10</td></tr>
+<tr><td>Chunking verified on long input</td><td>Yes — 2000-word test paper split into 3 chunks, merged correctly</td></tr>
+<tr><td>Hallucination-check injected-fabrication catch rate (final prompt, v3)</td><td>5 / 5</td></tr>
+</table>
+<p>Full test table with every input/expected/actual/pass-fail row is in <code>test-data/test_results.md</code>.</p>
+
+<h2>Limitations</h2>
+<ol>
+<li>No gate rejects non-paper input before the chain runs (it will still try to "summarise" e.g. a shopping list).</li>
+<li>Summary language mirrors the input paper's language instead of always producing English.</li>
+<li>The hallucination check verifies per-sentence support, not cross-section numeric consistency — an abstract's number and a contradicting results-section number can each individually pass the check.</li>
+<li>Implicit limitations stated outside a heading literally called "Limitations" (e.g. inside a Conclusion) are sometimes missed by the zero-shot relevance tagger.</li>
+</ol>
+
+</body>
+</html>

@@ -1,0 +1,12 @@
+Table 3: Ablation results on the held-out validation set
+
+Configuration          Accuracy   F1    Latency (ms)
+Full model              88.2      86.9    112
+- no attention pooling  81.4      79.2    98
+- no data augmentation  84.0      82.1    110
+- no pretraining        76.5      74.8    109
+Baseline (prior work)   79.9      77.3    140
+
+Removing attention pooling causes the largest drop (6.8 points accuracy),
+followed by removing pretraining (11.7 points accuracy). Data augmentation
+contributes a smaller but consistent 4.2-point gain.

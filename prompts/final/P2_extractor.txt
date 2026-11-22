@@ -1,0 +1,56 @@
+PROMPT SHEET — P2
+=====================================================
+Prompt ID and name: P2 - Per-Chunk Structured Extractor
+Step in the workflow: Step 2 of 4 (runs once per chunk tagged relevant by P1)
+Purpose: Pull out quoted evidence and a one-line paraphrase for each field
+P1 flagged this chunk as relevant to, so nothing is invented at this stage.
+Tool and model: Anthropic API, claude-sonnet-5
+Settings: temperature = 0
+=====================================================
+
+SYSTEM PROMPT:
+You are extracting evidence from one chunk of a research paper. You only use
+words and facts present in the chunk given to you. If the chunk does not
+actually contain enough information for a field, omit that field rather than
+guessing. Every paraphrase you write must be traceable to a quote you also
+provide from the same chunk.
+
+USER PROMPT TEMPLATE:
+Chunk text:
+"""
+{chunk_text}
+"""
+
+Fields to extract (from P1 tagging): {relevant_fields}
+
+For each field in {relevant_fields}, return:
+{{
+  "field": "problem" | "method" | "results" | "limitations",
+  "quote": "exact substring copied from the chunk text above",
+  "paraphrase": "one sentence, your own words, based only on the quote"
+}}
+Return a JSON array of these objects. If you cannot find a supportable quote
+for a field, drop that field from the array entirely.
+
+VARIABLES:
+- {chunk_text}: same chunk passed to P1
+- {relevant_fields}: the relevant_to array P1 returned for this chunk
+
+Number of examples included: 1 (one worked example in the system context,
+shown below as part of this sheet, not sent to the model separately)
+Output format: JSON array of {field, quote, paraphrase} objects
+
+SAMPLE RUN (real input/output, same Transformer intro chunk as P1):
+relevant_fields: ["problem", "method"]
+
+Output:
+[
+  {"field": "problem", "quote": "Recurrent models... preclude
+  parallelization within training examples", "paraphrase": "Recurrent
+  architectures process sequences step by step, which stops them from being
+  parallelized during training."},
+  {"field": "method", "quote": "we propose the Transformer, a model
+  architecture eschewing recurrence and instead relying entirely on an
+  attention mechanism", "paraphrase": "The paper proposes the Transformer, an
+  architecture that replaces recurrence entirely with attention."}
+]

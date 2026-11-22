@@ -1,0 +1,158 @@
+Title: Cross-Lingual Transfer for Low-Resource Medical Triage Chatbots
+
+Abstract
+Medical triage chatbots that ask patients structured follow-up questions are
+well studied in English but poorly supported in low-resource languages where
+labeled triage dialogue data is scarce. We study whether a triage dialogue
+policy trained primarily on English data can be transferred to five
+low-resource languages (Swahili, Amharic, Quechua, Tagalog, and Khmer) using
+a combination of multilingual sentence embeddings and a small amount of
+in-language fine-tuning data (200 dialogues per language). We find that
+transfer recovers 81% of the English-only triage accuracy on average across
+the five languages, with the largest gap in Khmer, and that a simple
+back-translation augmentation step closes roughly half of that remaining gap.
+
+1. Introduction
+Automated triage systems ask a patient a sequence of questions (chief
+complaint, duration, severity, associated symptoms) and route them to an
+appropriate level of care: self-care advice, scheduled appointment, urgent
+care, or emergency services. Building such a system requires both a language
+understanding component, to interpret free-text patient responses, and a
+dialogue policy component, to decide the next question or the final routing
+decision. Most published triage dialogue systems are trained and evaluated
+in English, reflecting the availability of labeled clinical dialogue
+datasets in English-speaking health systems. However, a large fraction of
+global healthcare access gaps are concentrated in regions where the
+dominant local languages are exactly the ones underrepresented in NLP
+research. This creates a practical need for triage systems that work well in
+low-resource languages without requiring the tens of thousands of labeled
+dialogues typically used to train English systems from scratch.
+
+Prior cross-lingual transfer work in NLP has shown that representations
+learned on high-resource languages can transfer to low-resource ones for
+tasks like classification and named entity recognition, but triage dialogue
+policy is a sequential decision-making task, not a single-shot
+classification task, and it is not obvious that the same transfer
+techniques apply cleanly. Our contribution is an empirical study of exactly
+this question in the medical triage setting, with a specific focus on how
+much in-language data is actually needed to reach usable accuracy, since
+that quantity directly determines whether a deployment in a new language is
+feasible given realistic annotation budgets.
+
+2. Related Work
+Cross-lingual transfer learning has been studied extensively for text
+classification and sequence labeling tasks using multilingual encoders such
+as mBERT and XLM-R, generally showing that fine-tuning on a high-resource
+source language and evaluating zero-shot on a target language recovers a
+meaningful fraction of in-language performance, though with large variance
+across language pairs and tasks. Separately, dialogue policy learning has
+been studied mostly in monolingual English settings, using either supervised
+imitation learning from expert-authored dialogues or reinforcement learning
+against a user simulator. A small number of studies have looked at
+multilingual task-oriented dialogue, primarily in booking and reservation
+domains rather than medical triage, and typically assuming access to larger
+in-language datasets (thousands of dialogues) than what is realistic for a
+new low-resource-language medical deployment. To our knowledge, no prior
+work has specifically measured how triage dialogue accuracy degrades, and
+how much in-language data is needed to recover it, across a set of
+genuinely low-resource languages spanning different language families and
+scripts.
+
+3. Data
+We constructed a triage dialogue dataset in English containing 12,000
+dialogues collected from a partner telehealth service, each ending in one of
+four routing labels (self-care, scheduled appointment, urgent care,
+emergency). For each of the five target languages (Swahili, Amharic,
+Quechua, Tagalog, Khmer), we collected 200 new in-language dialogues using
+local clinical partners following the same question schema as the English
+data, plus a held-out in-language test set of 300 dialogues per language
+that was never used for training or fine-tuning. We deliberately kept the
+in-language training set small (200 dialogues) to reflect a realistic
+annotation budget for a pilot deployment rather than a full dataset
+collection effort.
+
+4. Method
+Our dialogue policy is a classifier over the next action (ask a specific
+follow-up question, or emit one of the four routing labels) conditioned on
+the dialogue history so far, encoded using a frozen multilingual sentence
+encoder (LaBSE) followed by a small trainable transformer policy head. We
+first train the policy head on the full 12,000-dialogue English dataset.
+To transfer to a target language, we evaluate three conditions: (a)
+zero-shot, applying the English-trained policy head directly to encoded
+in-language dialogues with no further training; (b) fine-tuned, continuing
+training of the policy head on the 200 in-language dialogues for that
+target language; and (c) fine-tuned plus back-translation augmentation,
+where we additionally generate 1,000 synthetic in-language dialogues by
+back-translating English training dialogues into the target language and
+include them alongside the 200 real in-language dialogues during
+fine-tuning. Because the sentence encoder is frozen and shared across
+languages, only the small policy head needs to be retrained per language,
+keeping the in-language compute and data budget low.
+
+5. Experimental Setup
+For each of the five target languages and each of the three transfer
+conditions, we report routing accuracy (does the final predicted routing
+label match the clinically-labeled correct routing label) on the 300-dialogue
+held-out in-language test set, and we report question-level accuracy
+(does the predicted next question match the expert-authored reference
+question at each turn) averaged across all turns in the test set. We also
+report the same two metrics for the English-only policy evaluated on its
+own held-out English test set, as the reference ceiling we are trying to
+recover.
+
+6. Results
+The English-only reference policy reaches 91% routing accuracy and 84%
+question-level accuracy on its own held-out English test set. In the
+zero-shot condition, average routing accuracy across the five target
+languages is 58% (range 41% Khmer to 69% Tagalog), which we consider too low
+for deployment without further adaptation. Fine-tuning on the 200
+in-language dialogues raises average routing accuracy to 74% (range 55%
+Khmer to 83% Tagalog), recovering 81% of the English ceiling on average.
+Adding back-translation augmentation on top of fine-tuning raises average
+routing accuracy further to 79% (range 63% Khmer to 85% Tagalog), closing
+roughly half of the remaining gap to the English ceiling. Khmer remained
+the hardest target language under every condition, which we attribute
+partly to the multilingual encoder's comparatively weaker Khmer
+representations (confirmed via a separate retrieval probe) and partly to
+greater typological distance from English question structure.
+
+7. Error Analysis
+Manual review of 50 misrouted dialogues per language showed two recurring
+failure patterns. First, severity-related follow-up questions ("how bad is
+the pain, on a scale of mild, moderate, severe") were frequently
+mistranslated or misunderstood in back-translated training data, leading
+the fine-tuned policy to under-weight severity signals in Khmer and Quechua
+specifically. Second, in Tagalog and Swahili, code-switching with English
+medical terms in real patient responses (e.g. a patient writing most of
+their message in the local language but naming a symptom in English)
+occasionally confused the frozen sentence encoder, which we did not
+anticipate given that LaBSE is trained on predominantly monolingual
+sentence pairs.
+
+8. Limitations
+This study covers five low-resource languages and a single clinical
+partner's triage question schema and label taxonomy; results may not
+transfer to different triage schemas, different clinical domains, or
+languages typologically distant from the five studied here. Our
+back-translation augmentation relies on an existing machine translation
+system for each target language, and translation quality for Khmer and
+Quechua is noticeably weaker than for Tagalog and Swahili, which likely
+explains part of the remaining performance gap in those languages. We also
+did not evaluate end-to-end patient-facing deployment, only offline accuracy
+against expert-labeled reference dialogues, so real-world performance with
+live patients, including effects of code-switching and dialect variation
+not present in our collected data, remains untested. Finally, our 200
+in-language dialogue budget was chosen for this study and was not itself
+optimized; a formal data-efficiency curve (accuracy versus in-language
+dialogue count) is left to future work.
+
+9. Conclusion
+Cross-lingual transfer with a frozen multilingual encoder and a small
+trainable policy head, combined with a modest 200-dialogue in-language
+fine-tuning set, recovers the large majority of English-level triage
+accuracy across five low-resource languages, and back-translation
+augmentation provides a further, cheaper-to-obtain improvement on top of
+that. The remaining gap, concentrated in typologically distant and
+lower-resource-translation languages such as Khmer, suggests that encoder
+quality and translation quality, rather than policy architecture, are the
+main current bottlenecks for further improvement.

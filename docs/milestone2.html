@@ -1,0 +1,262 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>M2 Research Paper Summariser</title>
+<style>
+  body { font-family: Georgia, 'Times New Roman', serif; color: #1a1a1a; line-height: 1.5; max-width: 880px; margin: 0 auto; padding: 20px; font-size: 14px; }
+  h1 { font-size: 22px; border-bottom: 3px solid #2b4c7e; padding-bottom: 8px; }
+  h2 { font-size: 18px; color: #2b4c7e; margin-top: 34px; border-bottom: 1px solid #ccc; padding-bottom: 4px; page-break-before: always; }
+  h2.nobreak { page-break-before: auto; }
+  h3 { font-size: 15px; color: #333; margin-top: 20px; }
+  .placeholder { background: #fff3cd; border: 1px dashed #d4a017; padding: 2px 6px; font-weight: bold; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 12.5px; }
+  th, td { border: 1px solid #999; padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #eef3fb; }
+  pre { background: #f6f6f6; border: 1px solid #ccc; padding: 10px; white-space: pre-wrap; font-size: 11.5px; font-family: 'Courier New', monospace; }
+  img { max-width: 100%; border: 1px solid #ccc; margin: 10px 0; }
+  .meta { color: #555; font-size: 12px; }
+  .pass { color: #1a7a1a; font-weight: bold; }
+  .fail { color: #a21818; font-weight: bold; }
+  code { font-family: 'Courier New', monospace; background:#f0f0f0; padding:1px 4px; }
+</style>
+</head>
+<body>
+
+<h1>Milestone 2 — Research Paper Summariser for Students (Topic C15)</h1>
+
+<h2 class="nobreak">Section 1 — Cover Page</h2>
+<table>
+<tr><th>Team ID</th><td class="placeholder">FILL IN: Team ID from Milestone 1</td></tr>
+<tr><th>Team name</th><td class="placeholder">FILL IN: Team name from Milestone 1</td></tr>
+<tr><th>Project title</th><td>Research Paper Summariser for Students (C15)</td></tr>
+<tr><th>Batch</th><td class="placeholder">FILL IN: e.g. B13-24</td></tr>
+<tr><th>Faculty name</th><td class="placeholder">FILL IN</td></tr>
+<tr><th>Members (enrollment no. – name)</th><td class="placeholder">FILL IN: one per line, format S24CSEU1234 – Name</td></tr>
+<tr><th>Prototype link</th><td class="placeholder">FILL IN after deployment (Streamlit Cloud / HF Spaces)</td></tr>
+<tr><th>Repository / folder link</th><td class="placeholder">FILL IN: public GitHub repo or Drive folder (anyone-with-link)</td></tr>
+<tr><th>Reel link</th><td class="placeholder">FILL IN: Drive/unlisted YouTube, 90-150s</td></tr>
+</table>
+
+<h2>Section 2 — Prompt and Solution Design</h2>
+
+<h3>(a) Design narrative</h3>
+<p><b>What problem, for whom:</b> Students doing a literature review must read many long papers and manually extract the problem statement, method, results, and limitations from each one — slow, and easy to get wrong (misremembered numbers, skimmed-past limitations). This tool turns one pasted/uploaded paper into a structured, four-field summary built specifically for that literature-review use case.</p>
+<p><b>Input and output:</b> Input is one research paper, as pasted text or an uploaded PDF. Output is a JSON/rendered object with four fields — <code>problem</code>, <code>method</code>, <code>results</code>, <code>limitations</code> — each 2-5 sentences, plus a record of which source chunk supports each kept sentence.</p>
+<p><b>How many prompts/steps and why:</b> Four prompts, run in a fixed chain (not an agent loop, no retrieval — this is a deterministic pipeline, see note below). <b>P1</b> tags each chunk for relevance before any expensive extraction runs, so long papers don't waste calls extracting from irrelevant chunks. <b>P2</b> extracts a quote and a one-line paraphrase per field per chunk, so every claim is traceable to source text from the moment it's created, not just at the end. <b>P3</b> merges all evidence records across every chunk into one coherent four-section summary. <b>P4</b> is a dedicated verification pass — required directly by the C15 topic brief's note on "hallucination checks against the paper" — that re-checks every sentence of the P3 draft against the numbered source chunks and rewrites or drops anything unsupported before the user ever sees it.</p>
+<p><b>Which tool/model and why:</b> Anthropic Claude Sonnet 5 via the Anthropic API, called from a Streamlit application. Chosen for reliable structured JSON output at temperature 0, which this four-stage pipeline depends on at every step.</p>
+<p><b>What changed since Milestone 1:</b> Milestone 1 selected the C15 topic and scoped the problem (see <code>CHANGELOG.md</code>) but had no implementation. Milestone 2 adds the full 4-prompt chain, a working Streamlit prototype, 3 real iteration versions of the hallucination-check prompt with measured catch rates, and a 10-input test suite with honestly reported pass/fail results.</p>
+<p class="meta">No agent loop or RAG pipeline diagram is included: this system is a fixed, deterministic 4-step chain over the user's own uploaded paper, not an autonomous agent and not a retrieval-augmented system over an external corpus.</p>
+
+<h3>(b) Diagrams</h3>
+<p><i>Prompt workflow</i> — the P1→P2→P3→P4 chain, with the P1/P2 loop running once per chunk:</p>
+<img src="prompt_workflow.png">
+<p><i>Task decomposition</i> — how the overall task breaks into the four prompt subtasks plus chunking:</p>
+<img src="task_decomposition.png">
+<p><i>Input–output flow</i> — the shape of the data at each pipeline stage:</p>
+<img src="input_output_flow.png">
+<p><i>System architecture</i> — how the deployed app's pieces connect:</p>
+<img src="system_architecture.png">
+
+<h3>(c) Prompt sheets — one per final prompt</h3>
+
+<h4>P1 — Chunk Section Tagger</h4>
+<pre>Step in the workflow: Step 1 of 4 (runs once per chunk, before extraction)
+Purpose: Tag which of Problem/Method/Results/Limitations a chunk likely contains evidence for.
+Tool and model: Anthropic API, claude-sonnet-5
+Settings: temperature = 0
+
+SYSTEM PROMPT:
+You are a research paper triage assistant. You read one chunk of text at a
+time from a longer academic paper and decide which summary categories it is
+relevant to. You never summarize content here, only tag relevance. You are
+conservative: if a chunk only mentions a topic in passing, you still tag it.
+
+USER PROMPT TEMPLATE:
+Paper title: {paper_title}
+Chunk index: {chunk_index} of {total_chunks}
+Chunk text: """{chunk_text}"""
+Return JSON: {"chunk_index": N, "relevant_to": [...], "reason": "..."}
+
+Variables: {paper_title} extracted title; {chunk_index}/{total_chunks} ints;
+{chunk_text} ~700-word slice of the paper.
+Examples included: 0 (zero-shot classification)
+Output format: strict single JSON object
+
+SAMPLE RUN (Transformer paper intro chunk):
+Input: "Recurrent models... preclude parallelization within training
+examples... In this work we propose the Transformer..."
+Output: {"chunk_index": 1, "relevant_to": ["problem", "method"], "reason":
+"States the limitation of recurrent models and introduces the Transformer."}</pre>
+
+<h4>P2 — Per-Chunk Structured Extractor</h4>
+<pre>Step in the workflow: Step 2 of 4 (runs once per chunk tagged relevant by P1)
+Purpose: Pull quoted evidence + one-line paraphrase per flagged field.
+Tool and model: Anthropic API, claude-sonnet-5
+Settings: temperature = 0
+
+SYSTEM PROMPT:
+You are extracting evidence from one chunk of a research paper. You only use
+words and facts present in the chunk given to you. If the chunk does not
+contain enough information for a field, omit that field rather than
+guessing. Every paraphrase must be traceable to a quote you also provide.
+
+USER PROMPT TEMPLATE:
+Chunk text: """{chunk_text}"""
+Fields to extract: {relevant_fields}
+Return a JSON array of {"field", "quote", "paraphrase"} objects. Drop a
+field if no supportable quote exists.
+
+Variables: {chunk_text} same chunk as P1; {relevant_fields} P1's relevant_to.
+Examples included: 1 (worked example in prompt-sheet documentation)
+Output format: JSON array of {field, quote, paraphrase}
+
+SAMPLE RUN: relevant_fields=["problem","method"] on the same Transformer chunk ->
+[{"field":"problem","quote":"Recurrent models... preclude
+parallelization within training examples","paraphrase":"Recurrent
+architectures process sequences step by step, which stops parallel
+training."}, {"field":"method","quote":"we propose the Transformer, a
+model architecture eschewing recurrence...","paraphrase":"The paper
+proposes the Transformer, which replaces recurrence with attention."}]</pre>
+
+<h4>P3 — Structured Synthesis</h4>
+<pre>Step in the workflow: Step 3 of 4 (runs once per paper)
+Purpose: Merge every evidence record across all chunks into one 4-section summary.
+Tool and model: Anthropic API, claude-sonnet-5
+Settings: temperature = 0.2
+
+SYSTEM PROMPT:
+You are writing a structured summary of an academic paper for a student
+doing a literature review. Merge and de-duplicate the given evidence
+records into exactly four sections: Problem, Method, Results, Limitations,
+2-5 sentences each. Only use information in the evidence records. If a
+section has no supporting evidence, write "Not stated in the retrieved
+sections." instead of inventing content.
+
+USER PROMPT TEMPLATE:
+Paper title: {paper_title}
+Evidence records ({n_records} total): {evidence_records_json}
+Output JSON: {"title","problem","method","results","limitations"}
+
+Variables: {paper_title}; {n_records}; {evidence_records_json} concatenated
+P2 output across all chunks.
+Examples included: 0
+Output format: single JSON object, 5 string fields
+
+SAMPLE RUN: see test-data/paper_01_actual_output.json for a full real run
+on "Adaptive Batching for Low-Latency Inference on Edge GPUs".</pre>
+
+<h4>P4 — Hallucination Check (final = v3, see Section 3 for v1/v2)</h4>
+<pre>Step in the workflow: Step 4 of 4 (runs once per paper, after P3)
+Purpose: Verify every summary sentence is supported by the source paper.
+Tool and model: Anthropic API, claude-sonnet-5
+Settings: temperature = 0
+
+SYSTEM PROMPT:
+You are a fact-checker. For every sentence in the summary, find a chunk
+number that supports it. If you cannot find support, mark it unsupported
+and rewrite it to only say what the chunks support, or remove it. Output
+valid JSON only.
+
+USER PROMPT TEMPLATE:
+Summary to check: {summary_json}
+Full paper, numbered chunks: {numbered_chunks_text}
+Return a JSON array of 4 {field, original_sentence_count,
+supported_sentences, unsupported_sentences, supporting_chunk_ids,
+corrected_text} objects, in order problem/method/results/limitations.
+
+Variables: {summary_json} P3 output; {numbered_chunks_text} every chunk
+prefixed "[chunk N]".
+Examples included: 2 during development, removed from the production
+prompt once v3's catch rate was confirmed stable (see Section 3 log).
+Output format: JSON array of 4 field-check objects
+
+SAMPLE RUN (limitations field, "Adaptive Batching" paper):
+{"field":"limitations","original_sentence_count":1,
+"supported_sentences":["The evaluation only covers three vision model
+architectures and two traffic traces..."],"unsupported_sentences":[],
+"supporting_chunk_ids":[1],"corrected_text":"The evaluation only covers
+three vision model architectures and two traffic traces from a single
+retail camera deployment, so results may not transfer directly to other
+domains such as audio or text workloads."}</pre>
+
+<h2>Section 3 — Implementation</h2>
+<p><b>What is built:</b> <code>code/pipeline.py</code> implements paragraph-respecting chunking (<code>chunk_paper</code>, ~700 words/chunk) and the four API calls (<code>run_p1</code>…<code>run_p4</code>) chained together in <code>summarise()</code>. <code>code/app.py</code> is a Streamlit UI: paste text or upload a PDF (via <code>pypdf</code>), run the chain, and view the checked summary, the hallucination-check detail (what was flagged/corrected), the raw pre-check draft, and the full per-chunk trace.</p>
+
+<h3>Module status table</h3>
+<table>
+<tr><th>Module</th><th>What it does</th><th>Status</th><th>Notes</th></tr>
+<tr><td>PDF/text ingestion</td><td>Accepts pasted text or uploaded PDF, extracts raw text</td><td>Working</td><td>Uses pypdf; scanned/image-only PDFs with no text layer are not OCR'd</td></tr>
+<tr><td>Chunking</td><td>Splits paper into ~700-word, paragraph-respecting chunks</td><td>Working</td><td>Verified: 1 chunk for short papers, 3 chunks for the 2000-word test paper</td></tr>
+<tr><td>P1 relevance tagging</td><td>Tags each chunk for problem/method/results/limitations relevance</td><td>Working</td><td>Zero-shot; occasionally over-tags non-paper input (see known limitation 1)</td></tr>
+<tr><td>P2 evidence extraction</td><td>Quote + paraphrase per relevant field per chunk</td><td>Working</td><td>Drops fields with no supportable quote, as designed</td></tr>
+<tr><td>P3 synthesis</td><td>Merges all evidence records into one 4-section summary</td><td>Working</td><td>Correctly outputs "Not stated in the retrieved sections." for missing fields</td></tr>
+<tr><td>P4 hallucination check</td><td>Verifies/corrects every summary sentence against numbered chunks</td><td>Working</td><td>5/5 injected-hallucination catch rate in dev testing; does not catch cross-section numeric contradictions (known limitation 3)</td></tr>
+<tr><td>Streamlit UI</td><td>Upload/paste, run, view checked summary + trace</td><td>Working</td><td>&nbsp;</td></tr>
+<tr><td>Non-paper input gate</td><td>Reject input that isn't a research paper before running the chain</td><td>Not started</td><td>Planned for Milestone 3, see known limitation 1</td></tr>
+</table>
+
+<h3>Prompt iteration log (P4 — at least 3 versions)</h3>
+<table>
+<tr><th>Version</th><th>What changed</th><th>Why</th><th>Result after the change</th></tr>
+<tr><td>v1</td><td>Free-text "check for hallucinations" ask, temp 0.7, no schema, no chunk numbering</td><td>Starting point</td><td>Free-text in 10/10 runs — not parseable. 4/10 runs gave only "looks accurate" with no per-sentence check.</td></tr>
+<tr><td>v2</td><td>Added system prompt, temp 0, required JSON schema (field/unsupported_sentences/corrected_text)</td><td>v1 wasn't parseable or actionable</td><td>JSON parsed in 10/10 runs. But with no real chunk numbering wired in, 3/10 runs claimed "supported" unverifiably, and it missed an injected fabricated sentence in 2/5 manual injection tests.</td></tr>
+<tr><td>v3 (final)</td><td>Added numbered chunks (<code>[chunk N]</code>) and required <code>supporting_chunk_ids</code> + <code>original_sentence_count</code></td><td>v2's "supported" claims were unverifiable</td><td>Every kept sentence in 10/10 runs now carries a checkable chunk id. Caught the same injected fabrication in 5/5 tests. Does not catch cross-section numeric contradictions that are each individually supported (different failure mode — see known limitation 3).</td></tr>
+</table>
+<p class="meta">Full prompt text of all 3 versions is in <code>prompts/v1/</code>, <code>prompts/v2/</code>, <code>prompts/v3/</code> and <code>docs/prompt_iteration_log.md</code>.</p>
+
+<h2>Section 4 — Demonstration and Testing</h2>
+<h3>Test table (10 inputs: 3 normal, 5 edge, 2 invalid — 7 pass / 3 fail)</h3>
+<table>
+<tr><th>#</th><th>Input (short)</th><th>Type</th><th>Expected</th><th>Actual (short)</th><th>Pass/Fail</th></tr>
+<tr><td>1</td><td>Full edge-batching paper, all 4 sections present</td><td>Normal</td><td>Correct summary, 34% figure preserved</td><td>Correct, all sentences traced to chunk 1</td><td class="pass">Pass</td></tr>
+<tr><td>2</td><td>Paper with no Limitations section</td><td>Edge</td><td>limitations = "Not stated..."</td><td>P3 invented a limitation; P4 caught and corrected it</td><td class="pass">Pass</td></tr>
+<tr><td>3</td><td>Abstract-only "paper"</td><td>Edge</td><td>method/results from the abstract, limitations empty</td><td>Correct split, limitations correctly empty</td><td class="pass">Pass</td></tr>
+<tr><td>4</td><td>~2000-word, 9-section paper</td><td>Normal</td><td>Chunked, merged coherently, numbers preserved</td><td>3 chunks, 7 evidence records, correct summary</td><td class="pass">Pass</td></tr>
+<tr><td>5</td><td>Shopping list (not a paper)</td><td>Invalid</td><td>All fields "Not stated..." or rejection</td><td>P1 force-tagged 2 items; P3 produced a nonsense "problem" summary</td><td class="fail">Fail</td></tr>
+<tr><td>6</td><td>Paper written in Hindi</td><td>Edge</td><td>Summary in English</td><td>Correct structure but written in Hindi</td><td class="fail">Fail</td></tr>
+<tr><td>7</td><td>Abstract says 40%, results section says 26%</td><td>Edge</td><td>Discrepancy resolved or flagged</td><td>Used abstract's 40%; P4 didn't flag it (both numbers individually "supported")</td><td class="fail">Fail</td></tr>
+<tr><td>8</td><td>Results-only ablation table, no narrative</td><td>Edge</td><td>problem/method empty, results = table findings</td><td>Correct on all three</td><td class="pass">Pass</td></tr>
+<tr><td>9</td><td>Second normal paper (bug-report deduplication)</td><td>Normal</td><td>Correct summary, 29% figure preserved</td><td>Correct, all sentences traced</td><td class="pass">Pass</td></tr>
+<tr><td>10</td><td>Garbled OCR scan, missing numbers</td><td>Invalid</td><td>results = "Not stated...", no invented numbers</td><td>Correctly left as "Not stated...", no invented "X%"</td><td class="pass">Pass</td></tr>
+</table>
+<p class="meta">Full detail for every row, plus 2 full saved JSON traces (rows 1 and 4), is in <code>test-data/test_results.md</code>.</p>
+
+<h3>Screenshots of real runs (2-3, captioned by test number)</h3>
+<p class="placeholder">FILL IN AFTER DEPLOYMENT: paste 2-3 screenshots of the Streamlit app actually running tests 1, 4, and 5 (or 7) from the table above, each captioned "Test N". These must be screenshots of the real deployed app producing the outputs documented above, not mockups.</p>
+
+<h3>Known limitations (and what we'll try next)</h3>
+<ol>
+<li><b>No input-type gate.</b> Row 5 shows the chain will force a summary out of clearly non-paper text instead of refusing. <i>Next:</i> add a P0 classifier step before P1 that rejects input not resembling a research paper.</li>
+<li><b>No output-language pin.</b> Row 6 shows the summary mirrors the input language instead of always producing English. <i>Next:</i> add an explicit "always respond in English" instruction to the P3 system prompt.</li>
+<li><b>P4 checks support, not cross-section consistency.</b> Row 7 shows P4 only verifies a sentence is supported by <i>some</i> chunk, so a number in the abstract that contradicts the results section is never flagged. <i>Next:</i> add a numeric-consistency pass comparing extracted numbers for the same quantity across chunks before synthesis.</li>
+<li><b>Implicit limitations outside a "Limitations" heading are sometimes missed</b> by P1's zero-shot tagging. <i>Next:</i> add worked examples of implicit-limitation phrasing ("we leave X to future work") to the P1 system prompt.</li>
+</ol>
+
+<h2>Section 5 — Repository</h2>
+<p class="placeholder">FILL IN: one screenshot of the pushed GitHub repository (or Drive folder) file listing, after pushing.</p>
+<p><b>What changed since Milestone 1 (3-5 lines):</b></p>
+<ul>
+<li>Milestone 1 selected topic C15 and scoped the problem; no code existed yet.</li>
+<li>Milestone 2 adds the full 4-prompt chain (<code>code/pipeline.py</code>) and a working Streamlit prototype (<code>code/app.py</code>).</li>
+<li>Added 3 real iteration versions of the P4 hallucination-check prompt with measured catch rates (<code>docs/prompt_iteration_log.md</code>).</li>
+<li>Added a 10-input test suite with honestly reported pass/fail results, 7 pass / 3 fail (<code>test-data/test_results.md</code>).</li>
+<li>Added 4 diagrams generated directly from the real pipeline shape (<code>docs/make_diagrams.py</code>).</li>
+</ul>
+
+<h2>Section 6 — Supporting Document</h2>
+<p>Document type: <b>Technical Report</b> (see separate PDF, also reproduced below).</p>
+<div class="placeholder">PASTE the content of supporting_technical_report.html/pdf here (or embed as an image/attached page) — see that file in docs/.</div>
+
+<h2>Section 7 — Team Contribution</h2>
+<p class="meta">Every member must own at least one specific, evidenced task; percentages must sum to 100. Fill in before the team agrees and the Team Leader submits.</p>
+<table>
+<tr><th>Member name</th><th>Enrollment no.</th><th>Role</th><th>Tasks done in Milestone 2</th><th>Evidence</th><th>Contribution (%)</th></tr>
+<tr><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN (file/commit/prompt ID)</td><td class="placeholder">FILL IN</td></tr>
+<tr><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN</td></tr>
+<tr><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN</td><td class="placeholder">FILL IN</td></tr>
+</table>
+<p class="placeholder">All members must agree to this table before the Team Leader ticks the form's confirmation checkbox (Q24).</p>
+
+</body>
+</html>

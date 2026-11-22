@@ -1,0 +1,69 @@
+Title: Adaptive Batching for Low-Latency Inference on Edge GPUs
+
+Abstract
+Edge deployments of deep learning models must serve requests with strict
+latency budgets while running on GPUs far smaller than those used in cloud
+datacenters. Static batch sizes either waste throughput when traffic is low
+or blow latency budgets when traffic spikes. We introduce Adaptive Batching
+Controller (ABC), a lightweight scheduler that adjusts batch size every 50ms
+based on a rolling estimate of queueing delay. We evaluate ABC on three
+vision models deployed on Jetson Orin devices and show it reduces p99
+latency by 34% at equal throughput compared to fixed-batch baselines.
+
+1. Introduction
+Real-time edge inference systems, such as those used in industrial defect
+detection and on-device video analytics, must bound worst-case latency while
+maximizing GPU utilization. The standard approach of picking one fixed batch
+size at deployment time is brittle: it is tuned for an assumed traffic
+pattern and degrades badly when the actual pattern differs. Existing
+autoscaling solutions target cloud clusters and assume the ability to spin up
+new replicas, which is not available on a single edge device with fixed
+hardware. This leaves a gap for single-device, request-level batch
+adaptation. In this work we propose Adaptive Batching Controller (ABC), which
+operates entirely at the request-queue level of a single device and requires
+no additional hardware or replicas.
+
+2. Method
+ABC maintains a sliding window of the last 200 request arrival and completion
+timestamps. Every 50ms, it computes the current queueing delay percentile and
+compares it against a target latency budget set by the operator. If the
+estimated delay is below 70% of budget, ABC increases the next batch size by
+one; if above 90% of budget, it decreases the next batch size by one, down to
+a minimum of 1. Batch size changes are clamped to a configurable
+[min_batch, max_batch] range to avoid oscillation. Unlike prior cloud
+autoscalers, ABC never adds or removes compute resources; it only changes how
+many queued requests are grouped into a single forward pass.
+
+3. Experimental Setup
+We deployed three vision models (a ResNet-50 classifier, a YOLOv8 detector,
+and a MobileNetV3 classifier) on three NVIDIA Jetson Orin Nano devices. We
+replayed two real traffic traces from a retail camera deployment: one with
+steady low traffic and one with bursty traffic containing 5x spikes. Each
+model was evaluated for 30 minutes per trace, repeated 5 times. We compared
+ABC against three fixed batch sizes (1, 4, 8) and against a cloud-style
+autoscaler adapted to single-device batch size instead of replica count.
+
+4. Results
+On the bursty trace, ABC reduced p99 latency by 34% on average across the
+three models compared to the best-performing fixed batch size, while keeping
+throughput within 3% of the fixed-batch-8 baseline. On the steady low-traffic
+trace, ABC matched fixed-batch-1 latency while improving throughput by 18%
+by occasionally batching requests that arrived close together. The adapted
+cloud-style autoscaler performed worse than ABC on both traces, because its
+reaction time (built for replica scaling, on the order of seconds) was too
+slow for request-level batching, which needs decisions every tens of
+milliseconds.
+
+5. Limitations
+Our evaluation used three specific model architectures and two traffic
+traces from a single retail camera deployment; results may not transfer
+directly to other domains such as audio or text workloads. ABC's 50ms control
+interval was tuned by hand for the Jetson Orin Nano and would likely need
+retuning on substantially faster or slower hardware. We did not test ABC
+under adversarial traffic patterns designed to induce oscillation, and we
+leave a formal stability analysis of the controller to future work.
+
+6. Conclusion
+ABC shows that simple, local, request-level batch size adaptation can match
+or beat both fixed batching and cloud-style autoscalers on single edge
+devices, without requiring additional replicas or hardware.

@@ -1,0 +1,58 @@
+{
+  "input_file": "paper_01_normal.txt",
+  "title": "Adaptive Batching for Low-Latency Inference on Edge GPUs",
+  "n_chunks": 1,
+  "trace": [
+    {
+      "chunk_index": 1,
+      "tag": {
+        "chunk_index": 1,
+        "relevant_to": ["problem", "method", "results", "limitations"],
+        "reason": "Single chunk contains the intro problem statement, the ABC method description, the results section with numbers, and a dedicated limitations section."
+      },
+      "records": [
+        {
+          "field": "problem",
+          "quote": "The standard approach of picking one fixed batch size at deployment time is brittle: it is tuned for an assumed traffic pattern and degrades badly when the actual pattern differs.",
+          "paraphrase": "Fixed batch sizes are brittle because they assume a traffic pattern and fail when real traffic differs from that assumption."
+        },
+        {
+          "field": "method",
+          "quote": "Every 50ms, it computes the current queueing delay percentile and compares it against a target latency budget set by the operator.",
+          "paraphrase": "ABC recalculates queueing delay every 50ms and raises or lowers the next batch size based on how delay compares to a target latency budget."
+        },
+        {
+          "field": "results",
+          "quote": "ABC reduced p99 latency by 34% on average across the three models compared to the best-performing fixed batch size, while keeping throughput within 3% of the fixed-batch-8 baseline.",
+          "paraphrase": "ABC cut p99 latency by 34% versus the best fixed batch size while losing only 3% throughput compared to the highest-throughput fixed baseline."
+        },
+        {
+          "field": "limitations",
+          "quote": "Our evaluation used three specific model architectures and two traffic traces from a single retail camera deployment; results may not transfer directly to other domains such as audio or text workloads.",
+          "paraphrase": "The evaluation only covers three vision models and two traffic traces from one retail deployment, so results may not generalize to other domains."
+        }
+      ]
+    }
+  ],
+  "raw_summary_before_check": {
+    "title": "Adaptive Batching for Low-Latency Inference on Edge GPUs",
+    "problem": "Edge inference systems need to bound worst-case latency while maximizing GPU utilization, but fixed batch sizes are brittle: they are tuned for an assumed traffic pattern and degrade badly when real traffic differs from it.",
+    "method": "The paper proposes Adaptive Batching Controller (ABC), which recomputes the queueing delay percentile every 50ms and raises or lowers the next request batch size based on how that delay compares to an operator-set latency budget, without adding or removing compute resources.",
+    "results": "ABC reduced p99 latency by 34% on average across three vision models compared to the best fixed batch size, while keeping throughput within 3% of the fixed-batch-8 baseline.",
+    "limitations": "The evaluation only covers three vision model architectures and two traffic traces from a single retail camera deployment, so results may not transfer directly to other domains such as audio or text workloads."
+  },
+  "hallucination_checks": [
+    {"field": "problem", "unsupported_sentences": [], "supporting_chunk_ids": [1]},
+    {"field": "method", "unsupported_sentences": [], "supporting_chunk_ids": [1]},
+    {"field": "results", "unsupported_sentences": [], "supporting_chunk_ids": [1]},
+    {"field": "limitations", "unsupported_sentences": [], "supporting_chunk_ids": [1]}
+  ],
+  "checked_summary": {
+    "title": "Adaptive Batching for Low-Latency Inference on Edge GPUs",
+    "problem": "Edge inference systems need to bound worst-case latency while maximizing GPU utilization, but fixed batch sizes are brittle: they are tuned for an assumed traffic pattern and degrade badly when real traffic differs from it.",
+    "method": "The paper proposes Adaptive Batching Controller (ABC), which recomputes the queueing delay percentile every 50ms and raises or lowers the next request batch size based on how that delay compares to an operator-set latency budget, without adding or removing compute resources.",
+    "results": "ABC reduced p99 latency by 34% on average across three vision models compared to the best fixed batch size, while keeping throughput within 3% of the fixed-batch-8 baseline.",
+    "limitations": "The evaluation only covers three vision model architectures and two traffic traces from a single retail camera deployment, so results may not transfer directly to other domains such as audio or text workloads."
+  },
+  "pass_fail": "Pass"
+}

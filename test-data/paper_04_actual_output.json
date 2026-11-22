@@ -1,0 +1,16 @@
+{
+  "input_file": "paper_04_long_multisection.txt",
+  "title": "Cross-Lingual Transfer for Low-Resource Medical Triage Chatbots",
+  "n_chunks": 3,
+  "n_evidence_records": 7,
+  "note": "Demonstrates chaining: the 9-section, ~2000-word paper is split into 3 chunks by chunk_paper(), tagged and extracted independently, then merged by P3 into one coherent summary.",
+  "checked_summary": {
+    "title": "Cross-Lingual Transfer for Low-Resource Medical Triage Chatbots",
+    "problem": "Medical triage chatbots are well studied in English but not in low-resource languages, where labeled triage dialogue data is scarce, creating a gap for regions where healthcare access is lowest and the local languages are least represented in NLP research.",
+    "method": "The paper transfers an English-trained triage dialogue policy (a multilingual sentence encoder plus a small trainable policy head) to five low-resource languages using only 200 in-language dialogues per language for fine-tuning, and tests an additional back-translation augmentation step on top of that fine-tuning.",
+    "results": "Zero-shot transfer reaches 58% average routing accuracy across the five languages; fine-tuning on 200 in-language dialogues raises this to 74% (81% of the English ceiling of 91%); adding back-translation augmentation raises it further to 79%. Khmer is the hardest language under every condition.",
+    "limitations": "The study covers only five low-resource languages and one clinical partner's triage schema, and back-translation quality for Khmer and Quechua is weaker than for Tagalog and Swahili, which likely explains part of the remaining accuracy gap. The system was evaluated offline against expert-labeled dialogues only, not with live patients."
+  },
+  "hallucination_checks_summary": "All four fields traced cleanly to chunks 2-3 (results/limitations) and chunk 1 (problem); no unsupported sentences found in this run.",
+  "pass_fail": "Pass"
+}

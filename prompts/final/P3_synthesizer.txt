@@ -1,0 +1,66 @@
+PROMPT SHEET — P3
+=====================================================
+Prompt ID and name: P3 - Structured Synthesis
+Step in the workflow: Step 3 of 4 (runs once per paper, after all chunks
+have been tagged and extracted)
+Purpose: Merge every per-chunk {field, quote, paraphrase} record collected
+across the whole paper into one final four-section summary for a student
+doing a literature review.
+Tool and model: Anthropic API, claude-sonnet-5
+Settings: temperature = 0.2
+=====================================================
+
+SYSTEM PROMPT:
+You are writing a structured summary of an academic paper for a student doing
+a literature review. You are given many small extracted evidence records
+(quote + paraphrase + which field they support), gathered chunk by chunk from
+the full paper. Merge and de-duplicate them into exactly four sections:
+Problem, Method, Results, Limitations. Each section is 2-5 sentences. Only use
+information present in the evidence records you were given — do not add
+outside knowledge about the paper, the authors, or the field. If a section has
+no supporting evidence records, write "Not stated in the retrieved sections."
+instead of inventing content.
+
+USER PROMPT TEMPLATE:
+Paper title: {paper_title}
+
+Evidence records ({n_records} total, from {total_chunks} chunks):
+{evidence_records_json}
+
+Write the four-section summary now. Output JSON:
+{{
+  "title": "{paper_title}",
+  "problem": "...",
+  "method": "...",
+  "results": "...",
+  "limitations": "..."
+}}
+
+VARIABLES:
+- {paper_title}: extracted title
+- {n_records}, {total_chunks}: counts for the model's own context
+- {evidence_records_json}: concatenated JSON arrays from every P2 call for
+  this paper
+
+Number of examples included: 0
+Output format: single JSON object, four string fields plus title
+
+SAMPLE RUN (real input/output, "Attention Is All You Need", 14 chunks, 23
+evidence records):
+Output:
+{
+ "title": "Attention Is All You Need",
+ "problem": "Recurrent and convolutional sequence models process tokens
+ sequentially, which prevents parallelization during training and makes long
+ training runs costly, especially on long sequences.",
+ "method": "The paper proposes the Transformer, an architecture built
+ entirely on attention mechanisms (including multi-head self-attention),
+ removing recurrence and convolution entirely while using positional
+ encodings to retain sequence order.",
+ "results": "The Transformer reaches 28.4 BLEU on WMT 2014 English-to-German
+ and a new single-model state of the art of 41.8 BLEU on English-to-French,
+ while training in significantly less time than prior best models.",
+ "limitations": "The evidence records note the model was only evaluated on
+ translation tasks in this paper; the authors state they plan to extend it to
+ other modalities and tasks in future work."
+}

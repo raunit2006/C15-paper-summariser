@@ -1,0 +1,24 @@
+Title: A Simple Caching Layer for Repeated LLM Calls in Chat Applications
+
+Abstract
+Chat applications often re-send near-identical prompts to an LLM API within
+a single session (e.g. re-asking a question after a small edit). We present
+a semantic cache that stores (prompt embedding, response) pairs and returns a
+cached response when a new prompt's embedding is within a cosine-similarity
+threshold of a stored one. On a dataset of 4,000 real support-chat sessions,
+our cache served 22% of requests without an API call, cutting median
+response latency from 1.8s to 40ms for cached hits.
+
+Method
+We embed every incoming prompt with a small sentence encoder and compare it
+against a rolling cache of the last 500 (embedding, response) pairs using
+cosine similarity. A hit is declared above threshold 0.93, tuned on a held-out
+validation set. On a hit, the cached response is returned immediately; on a
+miss, the real API is called and the new pair is added to the cache,
+evicting the oldest entry if the cache is full.
+
+Results
+Across 4,000 sessions, the cache achieved a 22% hit rate with a false-positive
+rate (returning a wrong cached answer) of 1.4%, measured by human review of
+200 sampled hits. Median latency for cache hits was 40ms versus 1.8s for a
+live API call, and overall API cost across the dataset dropped by 21%.

@@ -1,0 +1,8 @@
+T1tle: Depe Le arn ing f0r Im age Rec0gn iti0n
+
+Abs t r a c t
+Th1s pap er pr0p0ses a n0vel appr0ach t0... [OCR SCAN FAILED, PAGE 2 OF 14
+MISSING] ...conv0luti0nal neural netw0rk arch1tectur e tra1ned 0n
+1mageNet data s3t w1th r3sults sh0w1ng improvment 0f ~X% 0ver basel1ne
+m3th0ds [SCAN ERROR] accu r acy met r ics c0uld n0t be rec0vered fr0m
+th1s scan. P1ease re-scan d0cument.

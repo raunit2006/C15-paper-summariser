@@ -1,0 +1,11 @@
+P4 — v1 (starting point)
+Settings: temperature = 0.7 (default)
+
+SYSTEM PROMPT: (none)
+
+USER PROMPT:
+Here is a summary of a paper and the paper text. Check the summary for
+hallucinations and tell me if anything is wrong.
+
+Summary: {summary_json}
+Paper: {full_paper_text}

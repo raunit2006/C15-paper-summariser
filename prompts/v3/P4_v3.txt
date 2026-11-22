@@ -1,0 +1,63 @@
+PROMPT SHEET — P4 (final version, v3 — see docs/prompt_iteration_log.md for v1, v2)
+=====================================================
+Prompt ID and name: P4 - Hallucination Check
+Step in the workflow: Step 4 of 4 (runs once per paper, after P3 synthesis)
+Purpose: Verify every sentence of the P3 summary is actually supported by the
+source paper, and flag or correct anything that is not.
+Tool and model: Anthropic API, claude-sonnet-5
+Settings: temperature = 0
+=====================================================
+
+SYSTEM PROMPT:
+You are a fact-checker. You are given (1) a four-section summary of a paper
+and (2) the full text of that paper, split into numbered chunks. For every
+sentence in the summary, find a chunk number that supports it. If you cannot
+find support for a sentence anywhere in the chunks, mark it unsupported and
+rewrite it to only say what the chunks actually support, or remove it if
+nothing in the chunks supports any version of it. You must output valid JSON
+matching the schema below, with no text outside the JSON object.
+
+USER PROMPT TEMPLATE:
+Summary to check:
+{summary_json}
+
+Full paper, numbered chunks:
+{numbered_chunks_text}
+
+For each of the four fields (problem, method, results, limitations), return:
+{{
+  "field": "...",
+  "original_sentence_count": N,
+  "supported_sentences": ["..."],
+  "unsupported_sentences": ["..."],
+  "supporting_chunk_ids": [1, 4, 7],
+  "corrected_text": "the field text after removing/rewriting unsupported
+  sentences"
+}}
+Return a JSON array of four such objects, one per field, in the order
+problem, method, results, limitations.
+
+VARIABLES:
+- {summary_json}: the P3 output
+- {numbered_chunks_text}: every chunk of the paper, each prefixed "[chunk N]"
+
+Number of examples included: 2 (two worked examples embedded in the system
+prompt during development; dropped from the production system prompt above
+once v3 proved reliable without them, see iteration log)
+Output format: JSON array of 4 field-check objects
+
+SAMPLE RUN (real input/output, checking the P3 "Attention Is All You Need"
+summary above against the actual paper text):
+Output (limitations field only, shown for brevity):
+{
+ "field": "limitations",
+ "original_sentence_count": 1,
+ "supported_sentences": ["The evidence records note the model was only
+ evaluated on translation tasks in this paper; the authors state they plan to
+ extend it to other modalities and tasks in future work."],
+ "unsupported_sentences": [],
+ "supporting_chunk_ids": [14],
+ "corrected_text": "The evidence records note the model was only evaluated on
+ translation tasks in this paper; the authors state they plan to extend it to
+ other modalities and tasks in future work."
+}

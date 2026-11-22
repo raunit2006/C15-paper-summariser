@@ -1,0 +1,10 @@
+groceries
+- milk 2L
+- eggs 12
+- bread wholemeal
+- rice 5kg
+- chicken breast
+- tomatoes
+- onions
+- call mom about sunday lunch
+- pick up dry cleaning
