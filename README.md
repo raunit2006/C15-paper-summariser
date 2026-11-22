@@ -5,9 +5,17 @@ Method, Results, Limitations) for a student doing a literature review —
 with long-document chunking and a hallucination-check pass against the
 source paper before anything is shown.
 
-**Team:** <TEAM_NAME> (Team ID: <TEAM_ID>)
-**Members:** see Section 1 of the Milestone 2 PDF / `docs/`
-**Prototype link:** <PROTOTYPE_LINK — fill in after deployment>
+**Team:** ThinkSync (Team ID: PE-B49-38, Batch-60)
+**Faculty:** Ankit Vijay Bansal
+**Members:**
+- S24CSEU1906 – Krish Kumar
+- S24CSEU1904 – Raunit Singh
+- S24CSEU2264 – Daivik Kumar Rawat
+- S24CSEU2640 – Kandarp Manucha
+- S24CSEU1926 – Akshay Maria
+
+**Repository:** https://github.com/raunit2006/C15-paper-summariser
+**Prototype link:** <PROTOTYPE_LINK — fill in after setting up Google AI Studio / deployment>
 
 ## What it does
 

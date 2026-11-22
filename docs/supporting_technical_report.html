@@ -17,7 +17,7 @@
 <body>
 
 <h1>Technical Report — Research Paper Summariser for Students (C15)</h1>
-<p class="placeholder">Team: FILL IN &nbsp;|&nbsp; Team ID: FILL IN</p>
+<p>Team: ThinkSync &nbsp;|&nbsp; Team ID: PE-B49-38 &nbsp;|&nbsp; Batch-60 &nbsp;|&nbsp; Faculty: Ankit Vijay Bansal</p>
 
 <h2>Architecture</h2>
 <p>A four-stage, deterministic prompt chain (no agent loop, no retrieval) wraps a single-paper input: (1) paragraph-respecting chunking (~700 words/chunk), (2) per-chunk relevance tagging, (3) per-chunk quoted-evidence extraction, (4) whole-paper synthesis into Problem/Method/Results/Limitations, and (5) a hallucination-check pass that re-verifies every synthesized sentence against the numbered source chunks before the user sees it. The chain is exposed through a Streamlit UI that accepts pasted text or an uploaded PDF.</p>
