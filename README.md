@@ -15,7 +15,8 @@ source paper before anything is shown.
 - S24CSEU1926 – Akshay Maria
 
 **Repository:** https://github.com/raunit2006/C15-paper-summariser
-**Prototype link:** <PROTOTYPE_LINK — fill in after setting up Google AI Studio / deployment>
+**Prototype link:** https://aistudio.google.com/app/prompts?state=%7B%22ids%22:%5B%221C_FcdfD-NJYobgZL8KHbzOW3zcR3EpkB%22%5D,%22action%22:%22open%22,%22userId%22:%22108873368678706490010%22,%22resourceKeys%22:%7B%7D%7D&usp=sharing
+(sign in with any Google account to view — normal login, no access request needed)
 
 ## What it does
 
